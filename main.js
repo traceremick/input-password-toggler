@@ -1,53 +1,32 @@
-const __a = document.querySelectorAll.bind(document);
+function enhancePasswordField(input) {
+    if (input.dataset.enhanced) return;
+    input.dataset.enhanced = true;
 
-const passwordInputs = __a('input[type="password"]');
-passwordInputs.forEach(input => {
     const button = document.createElement('button');
     button.setAttribute('tabindex', '-1');
     button.type = "button";
-    button.style.height = `${input.clientHeight}px`;
-    button.style.position = 'absolute';
-    button.style.left = (input.offsetLeft + input.clientWidth - 38) + "px";
-    button.style.top = (input.offsetTop) + "px";
-    button.style.background = 'none';
-    button.style.outline = 'none';
-    button.style.fontSize = '1.2em';
-    button.style.border = 'none';
-    input.title = "Press CTRL+B to toggle password mode";
-    input.addEventListener('keydown', e => {
-        if(e.ctrlKey && e.key === "b") {
-            e.preventDefault();
-            toggle();
-        }
-    });
-    input.insertAdjacentElement("afterend", button);
+    button.style.cssText = `height: ${input.clientHeight}px; position: absolute; left: ${input.offsetLeft + input.clientWidth - 38}px; top: ${input.offsetTop}px; background: none; outline: none; fontSize: 1.2em; border: none;`;
+    button.textContent = '🙈';
     input.parentNode.insertBefore(button, input.nextSibling);
 
-    input.addEventListener('input', (ev) => {
-        if (input.value) {
-            button.textContent = '🙊';
-        }
-        setTimeout(() => {
-            input.type = input.type;
-        }, 1000)
-    });
-
     function toggle() {
-        input.type == 'text' ? input.type = 'password' : input.type = 'text';
+        input.type = input.type === 'text' ? 'password' : 'text';
+        button.textContent = input.type === 'password' ? '🙈' : '🙉';
     }
 
-    button.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        toggle();
-    });
+    button.addEventListener('click', () => toggle());
+}
 
-    const observer = new MutationObserver(function (mutations) {
-        mutations.forEach(x => {
-            const target = x.target;
-            if (x.type != "attributes" && x.attributeName != "type") return;
-            target.type == "password" ? button.textContent = '🙈' : button.textContent = '🙉';
-        })
+const observer = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+            if (node.nodeType === 1) {
+                if (node.matches('input[type="password"]')) enhancePasswordField(node);
+                node.querySelectorAll('input[type="password"]').forEach(enhancePasswordField);
+            }
+        });
     });
-
-    observer.observe(input, { attributes: true });
 });
+
+observer.observe(document.body, { childList: true, subtree: true });
+document.querySelectorAll('input[type="password"]').forEach(enhancePasswordField);
